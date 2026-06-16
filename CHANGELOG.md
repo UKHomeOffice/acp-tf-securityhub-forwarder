@@ -3,6 +3,22 @@
 All notable changes to this module are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-16
+
+### Changed
+
+- Lowered `required_version` back to `>= 1.0` so the module runs on the Terraform that
+  consumers actually use. `acp-ops-resources` (the first consumer) runs
+  `terraform-toolset:v1.1.7`; the `>= 1.2` pin added in 1.0.1 would have failed `terraform init`.
+- Re-implemented the region assertion without a `lifecycle` precondition (a 1.2-only feature):
+  a `null_resource` now emulates it via a count type-coercion that aborts the plan, printing both
+  region values, when `var.aws_region` disagrees with the provider's actual region. Same guarantee,
+  Terraform 1.0+ compatible.
+
+### Added
+
+- `hashicorp/null` provider requirement (`>= 3.0`), used solely for the region-assertion resource.
+
 ## [1.0.1] - 2026-06-10
 
 ### Changed

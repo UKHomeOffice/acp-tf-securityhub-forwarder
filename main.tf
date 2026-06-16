@@ -22,20 +22,21 @@ locals {
 }
 
 # Rule on this account's DEFAULT event bus, where Security Hub publishes its findings.
+# The module deploys into the provider's region; var.aws_region is only a name suffix.
+# Fail fast if they disagree, so resource names can't misreport where things live.
+# lifecycle preconditions need Terraform >= 1.2, but consumers (e.g. acp-ops-resources)
+# run 1.1.x, so we emulate the assertion here: when the regions match, count is 0 and
+# nothing is created; when they disagree, count gets a string, which is an invalid value
+# for count and aborts the plan — the diagnostic prints both region values.
+resource "null_resource" "assert_region_matches_provider" {
+  count = var.aws_region == data.aws_region.current.name ? 0 : "aws_region (\"${var.aws_region}\") must equal the provider region (\"${data.aws_region.current.name}\"); it only sets the name suffix, not where resources deploy."
+}
+
 resource "aws_cloudwatch_event_rule" "forward" {
   name          = local.name
   description   = "Forward Security Hub imported findings to the central ${coalesce(var.central_bus_name, "securityhub-ingest")} bus in the hub account"
   event_pattern = local.event_pattern
   tags          = local.tags
-
-  # The module deploys into the provider's region; var.aws_region is only a name suffix.
-  # Fail fast if they disagree, so resource names can't misreport where things live.
-  lifecycle {
-    precondition {
-      condition     = var.aws_region == data.aws_region.current.name
-      error_message = "aws_region (\"${var.aws_region}\") must equal the provider region (\"${data.aws_region.current.name}\"); it only sets the name suffix, not where resources deploy."
-    }
-  }
 }
 
 # Role EventBridge assumes to deliver to the central bus. Cross-account delivery needs
