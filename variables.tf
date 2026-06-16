@@ -34,4 +34,9 @@ variable "event_pattern" {
   description = "Override the EventBridge event pattern (a JSON string). When null, the module matches Security Hub imported findings (source aws.securityhub, detail-type 'Security Hub Findings - Imported'). Use this to add filtering later without a breaking change."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.event_pattern == null || can(jsondecode(var.event_pattern))
+    error_message = "event_pattern must be valid JSON, or null to use the default Security Hub pattern."
+  }
 }

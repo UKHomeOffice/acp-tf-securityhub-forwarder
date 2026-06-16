@@ -1,3 +1,6 @@
+# Region the provider actually resolves to — used to assert the name suffix can't lie.
+data "aws_region" "current" {}
+
 locals {
   # Consistent, env- and region-suffixed name so resources are greppable and never
   # collide within an account. e.g. securityhub-forward-ops-prod-eu-west-2.
@@ -24,6 +27,15 @@ resource "aws_cloudwatch_event_rule" "forward" {
   description   = "Forward Security Hub imported findings to the central ${coalesce(var.central_bus_name, "securityhub-ingest")} bus in the hub account"
   event_pattern = local.event_pattern
   tags          = local.tags
+
+  # The module deploys into the provider's region; var.aws_region is only a name suffix.
+  # Fail fast if they disagree, so resource names can't misreport where things live.
+  lifecycle {
+    precondition {
+      condition     = var.aws_region == data.aws_region.current.name
+      error_message = "aws_region (\"${var.aws_region}\") must equal the provider region (\"${data.aws_region.current.name}\"); it only sets the name suffix, not where resources deploy."
+    }
+  }
 }
 
 # Role EventBridge assumes to deliver to the central bus. Cross-account delivery needs
@@ -65,6 +77,10 @@ resource "aws_cloudwatch_event_target" "forward" {
   rule     = aws_cloudwatch_event_rule.forward.name
   arn      = var.central_bus_arn
   role_arn = aws_iam_role.forward.arn
+
+  # Ensure the PutEvents permission is created before the target is wired, so the rule
+  # can't briefly fire into a role that isn't yet allowed to deliver (create-ordering).
+  depends_on = [aws_iam_role_policy.forward]
 
   retry_policy {
     maximum_event_age_in_seconds = 3600
