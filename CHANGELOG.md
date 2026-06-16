@@ -3,6 +3,15 @@
 All notable changes to this module are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-06-16
+
+### Fixed
+
+- Variable `validation` error messages (`central_bus_arn`, `event_pattern`) now start with a capital
+  letter and end with a period, as Terraform 1.1.x requires. They previously started with the lowercase
+  variable name, which failed `terraform init` on consumers running Terraform 1.1.x (e.g.
+  `terraform-toolset:v1.1.7`). Newer Terraform dropped that check, so it wasn't caught locally.
+
 ## [1.1.0] - 2026-06-16
 
 ### Changed

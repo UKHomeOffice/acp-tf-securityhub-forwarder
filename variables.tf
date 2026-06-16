@@ -4,7 +4,7 @@ variable "central_bus_arn" {
 
   validation {
     condition     = can(regex("^arn:aws:events:[a-z0-9-]+:[0-9]{12}:event-bus/.+$", var.central_bus_arn))
-    error_message = "central_bus_arn must be a full EventBridge event-bus ARN, e.g. arn:aws:events:eu-west-2:546151634857:event-bus/securityhub-ingest."
+    error_message = "The central_bus_arn must be a full EventBridge event-bus ARN, e.g. arn:aws:events:eu-west-2:546151634857:event-bus/securityhub-ingest."
   }
 }
 
@@ -37,6 +37,6 @@ variable "event_pattern" {
 
   validation {
     condition     = var.event_pattern == null || can(jsondecode(var.event_pattern))
-    error_message = "event_pattern must be valid JSON, or null to use the default Security Hub pattern."
+    error_message = "The event_pattern must be valid JSON, or null to use the default Security Hub pattern."
   }
 }
