@@ -3,6 +3,17 @@
 All notable changes to this module are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-18
+
+### Fixed
+
+- Removed the `retry_policy` block from `aws_cloudwatch_event_target.forward`. EventBridge rejects a
+  retry policy when the target is an event bus (`ValidationException: Retry policy is not supported for
+  Event bus targets`), and this module's target is always an event bus, so every `terraform apply`
+  failed at the target. `terraform plan` could not catch it — the constraint is enforced server-side at
+  apply time. Bus-to-bus delivery now relies on EventBridge's default managed retry (~24h); the optional
+  DLQ is unchanged and still captures undelivered forwards (DLQs *are* supported for event-bus targets).
+
 ## [1.1.1] - 2026-06-16
 
 ### Fixed
