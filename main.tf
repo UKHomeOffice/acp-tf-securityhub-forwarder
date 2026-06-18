@@ -83,11 +83,10 @@ resource "aws_cloudwatch_event_target" "forward" {
   # can't briefly fire into a role that isn't yet allowed to deliver (create-ordering).
   depends_on = [aws_iam_role_policy.forward]
 
-  retry_policy {
-    maximum_event_age_in_seconds = 3600
-    maximum_retry_attempts       = 4
-  }
-
+  # No retry_policy here: EventBridge rejects one when the target is an event bus
+  # ("ValidationException: Retry policy is not supported for Event bus targets"), and this
+  # module's target is always an event bus. Bus-to-bus delivery uses EventBridge's own
+  # default managed retry (~24h); anything still undelivered after that lands in the DLQ.
   dynamic "dead_letter_config" {
     for_each = var.enable_dlq ? [1] : []
     content {
@@ -102,8 +101,8 @@ resource "aws_sqs_queue" "dlq" {
 
   name = "${local.name}-dlq"
 
-  # Retry policy above only retries for 1h; keep the DLQ window wide (14 days = max)
-  # so failed forwards persist long enough to investigate.
+  # EventBridge's default managed retry runs ~24h for event-bus targets; keep the DLQ
+  # window wide (14 days = max) so failed forwards persist long enough to investigate.
   message_retention_seconds = 1209600
   sqs_managed_sse_enabled   = true
 

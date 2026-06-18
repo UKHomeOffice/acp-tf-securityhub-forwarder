@@ -95,7 +95,9 @@ All named `securityhub-forward-${environment}-${aws_region}`:
 - `aws_cloudwatch_event_rule.forward` — on the default bus, matching imported Security Hub findings.
 - `aws_iam_role.forward` + `aws_iam_role_policy.forward` — assumable by `events.amazonaws.com`,
   least-privilege `events:PutEvents` on `central_bus_arn` only.
-- `aws_cloudwatch_event_target.forward` — target = `central_bus_arn`, with retry policy + optional DLQ.
+- `aws_cloudwatch_event_target.forward` — target = `central_bus_arn`, with an optional DLQ. No custom
+  retry policy: EventBridge doesn't support one for event-bus targets, so bus-to-bus delivery uses its
+  default managed retry (~24h) and undelivered events fall through to the DLQ.
 - `aws_sqs_queue.dlq` + `aws_sqs_queue_policy.dlq` — when `enable_dlq` (default), SSE on, 14-day
   retention, `sqs:SendMessage` scoped to this rule.
 
